@@ -23,7 +23,7 @@ mov $0xAABBCCDD, %eax
 
 i see a transfer of a 32-bit immediate value to the eax register, which is ALSO a 32 bit register soooo if we refer to the manual
 
-![MOV instruction reference](/images/rtfm&wtfi-lab/1.png)
+![MOV instruction reference](/rtfm&wtfi-lab/images/1.png)
 
 This is the closest of a match we can get, lets go ahead and write the bytes as follows:
 
