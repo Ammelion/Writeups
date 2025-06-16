@@ -37,7 +37,7 @@ sahf
 
 from the manual we see that it copies the upper 8 bits of the AX register, also known as the AH register and into the lower bytes of the EFLAGS register affecting the status flags
 
-![SAHF instruction reference](/images/2.png)
+![SAHF instruction reference](/rtfm&wtfi-lab/images/2.png)
 
 The result therefore for this one is trivial :p
 
@@ -51,7 +51,7 @@ jz mylabel
 
 Since the processor wont remember mere labels like these we need to use a little bit of thinking over here...... from the manual we see that it takes exactly the number of bytes we have to jump, lets see how many bytes each instruction takes
 
-![Jump instruction reference](/images/3.png)
+![Jump instruction reference](/rtfm&wtfi-lab/images/3.png)
 
 The next instruction in the program is an AND instruction which takes 5 bytes so:
 
@@ -69,7 +69,7 @@ this will, as the name says will perform an and instruction, if we refer to the 
 .byte 0x25, 0x37, 0x13, 0x03, 0x00
 ```
 
-![AND instruction reference](/images/4.png)
+![AND instruction reference](/rtfm&wtfi-lab/images/4.png)
 
 ```asm
 ret
@@ -81,7 +81,7 @@ perform a return, its simple, we have to do a near return so
 .byte 0xC3
 ```
 
-![RET instruction reference](/images/5.png)
+![RET instruction reference](/rtfm&wtfi-lab/images/5.png)
 
 Now to write the following as inline assembly in GCC we do the following:
 
