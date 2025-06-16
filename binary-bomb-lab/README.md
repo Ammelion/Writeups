@@ -7,7 +7,7 @@ lets take a look on how to solve it
 
 ## Some stuff to do beforehand:
 1.) make a gdbCfg file that we'll refer to gdb like this
-display/10i $rip
+```display/10i $rip
 display/x $rbp
 display/x $rsp
 display/x $rax
@@ -24,13 +24,13 @@ display/x $r14
 display/10gx $rsp
 b phase_1
 start
-
+```
 2.) make an empty answers.txt file
-touch answers.txt
-
+```touch answers.txt
+```
 ## Phase 1 ->
 Entering the phase is pretty simple just initiate the program like
-gdb ./bomb -q -x ~/gdbCfg
+```gdb ./bomb -q -x ~/gdbCfg```
 
 now you enter the program at the very first instruction:
 type ni to go to the next instruction and repeatedly press enter until it asks a string
@@ -43,7 +43,7 @@ underneath this is the code that checks if your answer is correct or not
 lets step INSIDE the function using the "si" command
 
 lets interpret this
-
+```
 Dump of assembler code for function phase_1:
 => 0x00005555555555a7 <+0>:	endbr64
    0x00005555555555ab <+4>:	sub    rsp,0x8
@@ -56,17 +56,17 @@ Dump of assembler code for function phase_1:
    0x00005555555555c4 <+29>:	call   0x555555555be5 <explode_bomb>
    0x00005555555555c9 <+34>:	jmp    0x5555555555bf <phase_1+24>
 End of assembler dump.
-
+```
 very interesting
 the debugging symbols make this a lot easier
 we can see a strings not equal check being done over here, and if it fails it jumps to the bomb
 this implies that the solution is a hardcoded string, particularly on the 0x555555557150 memory location
 
 lets inspect that memory location using
-
+```
 (gdb) x/s 0x555555557150
 0x555555557150:	"I am just a renegade hockey mom."
-
+```
 cool, i guess thats a solution
 
 ## Phase 2 ->
@@ -81,7 +81,7 @@ use "c" to skip through the code to directly to the second input point
 
 once there, write anything for the input part, and jump inside the phase two function using "si"
 lets view the disassembly and get "horrified"
-
+```
 Dump of assembler code for function phase_2:
 => 0x00005555555555cb <+0>:	endbr64
    0x00005555555555cf <+4>:	push   rbp
@@ -117,23 +117,23 @@ Dump of assembler code for function phase_2:
    0x0000555555555633 <+104>:	ret
    0x0000555555555634 <+105>:	call   0x555555555220 <__stack_chk_fail@plt>
 End of assembler dump.
-
-suspiciously longer than before
+```
+much longer than before
 
 up until +29 we are setting up canary protection and reading six numbers, nothing much i guess
 +34 says rsp gets compared to 1 otherwise get bombed, so the first number is 1
 +62 to +78 forms a simple loop of doubling the current number and comparing to the next, simple stuff
 since the total numbers are supposed to be six and we compare doubles, we can conclude that
-
+```
 1 2 4 8 16 32
-
+```
 is the next solution, classic geometric progression
 onto the next!
 
 ## Phase 3 ->
 verrrry logical, if you are smart enough, you might not even have to calculate anything for this one
 lets see the disassembly first
-
+```
 Dump of assembler code for function phase_3:
 => 0x0000555555555639 <+0>:	endbr64
    0x000055555555563d <+4>:	sub    rsp,0x18
@@ -191,16 +191,16 @@ Dump of assembler code for function phase_3:
    0x0000555555555709 <+208>:	mov    eax,0x0
    0x000055555555570e <+213>:	jmp    0x5555555556ad <phase_3+116>
    0x0000555555555710 <+215>:	call   0x555555555220 <__stack_chk_fail@plt>
-
+```
 do you see a pattern here? the code length keeps on increasing :(
 anyways
 
 +39 shows a sscanf, hmm that's a clue that can show us what data it asks for this time
 lets read that address
-
+```
 (gdb) x/s 0x55555555730f
 0x55555555730f:	"%d %d"
-
+```
 so it accepts two numbers? that's simple... i hope
 +49 tells me that it cannot be greater than 7, alright
 +59 to +76 shows that this code will jump to different places and depends upon the value of the first number i give which is kind of like switch cases in c
@@ -210,20 +210,20 @@ so five cases actually, alright
 
 so basically whatever the answer is, is pressent at eax at +122 !
 so we will move to the next instruction in eax until +122 and check the eax register with
-
+```
 (gdb) info registers eax
 eax            0x25a               602
-
+```
 eax is 602 if we entered the input 0
 there we go
 
 phase 3 answer is 
-0 602
+```0 602```
 
 ## Phase 4 ->
 
 do the usual steps , type any input and jump into phase 4's disassembly
-
+```
 (gdb) disas
 Dump of assembler code for function phase_4:
 => 0x000055555555574b <+0>:	endbr64
@@ -256,7 +256,7 @@ Dump of assembler code for function phase_4:
    0x00005555555557be <+115>:	ret
    0x00005555555557bf <+116>:	call   0x555555555220 <__stack_chk_fail@plt>
 End of assembler dump.
-
+```
 
 short code? nah we can already see at +73 there is a call to some func4... hmm
 before that lets see what this part has to offer
@@ -270,9 +270,9 @@ BUT WAIT
 after func4 at +78 we see eax MUST be 0xa, THIS MEANS THAT WHATEVER THIS FUNCTION SPITS MUST BE 10!!
 
 now disassembling func4 with
-disas func4
+```disas func4```
 
-
+```
 (gdb) disas func4
 Dump of assembler code for function func4:
    0x0000555555555715 <+0>:	endbr64
@@ -299,7 +299,7 @@ Dump of assembler code for function func4:
    0x0000555555555747 <+50>:	add    ebx,eax
    0x0000555555555749 <+52>:	jmp    0x55555555572f <func4+26>
 End of assembler dump.
-
+```
 
 this function calls itself again and again, recursive stuff
 the starting looks very much like calculating the mid of a number that will be 0xe in the first iteration
@@ -325,14 +325,14 @@ rollback and add
 
 soooooo ding ding
 the third solution is 
-
+```
 3 10 (you can write a python script for this but i am just lazy)
-
+```
 ## Phase 5
 
 Nowwww lets see what phase 5 has to offer
 
-(gdb) disas
+```(gdb) disas
 Dump of assembler code for function phase_5:
 => 0x00005555555557c4 <+0>:	endbr64
    0x00005555555557c8 <+4>:	sub    rsp,0x18
@@ -374,18 +374,18 @@ Dump of assembler code for function phase_5:
    0x0000555555555854 <+144>:	jmp    0x5555555557f5 <phase_5+49>
    0x0000555555555856 <+146>:	call   0x555555555220 <__stack_chk_fail@plt>
 End of assembler dump.
-
+```
 Smaller code, probably some scare factor wrapped within, lets dive!
 
 examining 0x55555555730f gives that this also asks for two numbers, cool
 +49 to +61 is gonna bomb, if we set the first number as 15, basically only 1 to 14 numbers are allowed as first input
-
+```
 (gdb) x/20dw 0x5555555571c0
 0x5555555571c0 <array.3471>:	10	2	14	7
 0x5555555571d0 <array.3471+16>:	8	12	15	11
 0x5555555571e0 <array.3471+32>:	0	4	1	13
 0x5555555571f0 <array.3471+48>:	3	9	6	5
-
+```
 this is the array reffered at +73
 after banging my head for a day or two i find:
 that this is nothing but an array traversal 15 times from the indexed number until on the last iteration the stopping number is 15 too
@@ -395,13 +395,13 @@ alright!
 so if we start from the 5th index, we can reach the end goal of 15 with a total sum of 115
 
 answer:
-5 115
+```5 115```
 
 
 ## Phase 6
 For the finale we have -> 
 
-(gdb) disas
+```(gdb) disas
 Dump of assembler code for function phase_6:
 => 0x000055555555585b <+0>:	endbr64
    0x000055555555585f <+4>:	push   r14
@@ -489,7 +489,7 @@ Dump of assembler code for function phase_6:
    0x000055555555597d <+290>:	ret
    0x000055555555597e <+291>:	call   0x555555555220 <__stack_chk_fail@plt>
 End of assembler dump.
-
+```
 a very good attempt to make us regret our journey, unfortunately we wont :)
 
 till +38 we get six numbers as input
@@ -499,7 +499,7 @@ next we find that 0x555555559200 is called "node 1"
 perhaps a reference to a data structure like a linked list
 this means some sensitive data is present here
 lets give it a shot
-
+```
 (gdb) x/2gx 0x555555559200
 0x555555559200 <node1>:	0x0000000100000212	0x0000555555559210
 (gdb) x/2gx 0x0000555555559210
@@ -512,30 +512,30 @@ lets give it a shot
 0x555555559240 <node5>:	0x00000005000003a7	0x0000555555559110
 (gdb) x/2gx 0x0000555555559110
 0x555555559110 <node6>:	0x0000000600000200	0x0000000000000000
-
+```
 six nodes, neatly arranged with the last one ending with a null , SWEET!
 
 now!
 convert all the eax first parts to data in the linked list (32 bytes)
 we get
-
+```
 Node 1 -->530
 Node 2 -->450
 Node 3 -->533
 Node 4 -->915
 Node 5 -->935
 Node 6 -->512
-
+```
 now, lets take a look as the disassembly again
 so the point is from +171 to +221 we can see that we are "reassembling" the linked list to make sure all the data points are in descending order
 
 lets do that
-5(935)  > 4(915) > 3(533) > 1(530) > 6(512) > 2(450)
+```5(935)  > 4(915) > 3(533) > 1(530) > 6(512) > 2(450)```
 
 so finally the six unique numbers that are needed to be arranged as follows
-
+```
 => 5 4 3 1 6 2
-
+```
 
 and thus we've solved all the phases of the Binary Bomb Lab!
 Special thanks to Xeno and Ost2 for providing so much knowledge and fun stuff to tinker with
